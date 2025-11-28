@@ -2849,7 +2849,7 @@ export const initializeResponseSchema = z.object({
 export const sessionNotificationSchema = z.object({
   _meta: z.record(z.unknown()).optional(),
   sessionId: z.string(),
-  update: z.union([
+  update: z.discriminatedUnion("sessionUpdate", [
     z.object({
       _meta: z.record(z.unknown()).optional(),
       content: z.union([

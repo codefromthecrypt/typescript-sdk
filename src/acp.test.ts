@@ -25,6 +25,7 @@ import {
   PROTOCOL_VERSION,
   ndJsonStream,
 } from "./acp.js";
+import { sessionNotificationSchema } from "./schema.js";
 
 describe("Connection", () => {
   let clientToAgent: TransformStream<Uint8Array, Uint8Array>;
@@ -1104,5 +1105,48 @@ describe("Connection", () => {
       cwd: "/test",
     });
     expect(loadResponse).toEqual({});
+  });
+});
+
+describe("sessionNotificationSchema", () => {
+  it("validates tool_call update with all optional fields", () => {
+    const toolCallUpdate = {
+      sessionId: "test-session",
+      update: {
+        sessionUpdate: "tool_call",
+        toolCallId: "tool-1",
+        title: "Read /test",
+        status: "pending",
+        content: [
+          {
+            type: "content",
+            content: { type: "text", text: "Reading file..." },
+          },
+        ],
+        kind: "read",
+        locations: [{ path: "/test" }],
+      },
+    };
+
+    const result = sessionNotificationSchema.safeParse(toolCallUpdate);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.update.sessionUpdate).toBe("tool_call");
+    }
+  });
+
+  it("rejects invalid sessionUpdate discriminator", () => {
+    const invalidUpdate = {
+      sessionId: "test-session",
+      update: {
+        sessionUpdate: "invalid_type",
+      },
+    };
+
+    const result = sessionNotificationSchema.safeParse(invalidUpdate);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].code).toBe("invalid_union_discriminator");
+    }
   });
 });
